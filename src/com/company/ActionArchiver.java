@@ -144,6 +144,9 @@ abstract class ActionArchiver {
     }
 
     boolean closeZipOutputStream(ZipOutputStream zos) {
+        if (zos == null) {
+            return true;
+        }
         try {
             zos.close();
         } catch (IOException exc) {
@@ -154,6 +157,9 @@ abstract class ActionArchiver {
     }
 
     boolean closeZipFile(ZipFile zf) {
+        if (zf == null) {
+            return true;
+        }
         try {
             zf.close();
         } catch (IOException exc) {

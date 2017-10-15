@@ -3,10 +3,12 @@ package com.company;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 
+import java.io.BufferedOutputStream;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.zip.ZipOutputStream;
 
 class CreateActionArchiver extends ActionArchiver {
     CreateActionArchiver() {
@@ -30,40 +32,26 @@ class CreateActionArchiver extends ActionArchiver {
     boolean exec() {
         ArchiveCreator creator = new ArchiveCreator();
         Path target = Paths.get(getTargetArchiveName());
+        ZipOutputStream zos;
         try {
-            creator.createZipOutputStream(target.normalize(),
-                    getOptionValueMapping().getOrDefault("comment", null));
+            zos = new ZipOutputStream(new BufferedOutputStream(Files.newOutputStream(target.normalize())));
+            zos.setComment(getOptionValueMapping().getOrDefault("comment", null));
         } catch (IOException exc) {
-            setErrorString("cannot create new archive: " + exc.toString());
+            setErrorString("cannot create temporary archive: " + exc.toString());
             return false;
         }
+        creator.setZipOutputStream(zos);
 
-        for (String file : getFiles()) {
-            try {
-                Files.walkFileTree(Paths.get(file).normalize(), creator);
-            } catch (IOException exc) {
-                setErrorString("error occurred during archiving " + file + ": " + exc.toString());
-                try {
-                    creator.closeZipOutputStream();
-                    Files.delete(target);
-                } catch (IOException e) {
-                    setErrorString("cannot remove invalid archive " + target + ": " + exc.toString());
-                }
-                return false;
-            }
-        }
-        try {
-            creator.closeZipOutputStream();
-        } catch (IOException exc) {
-            setErrorString("cannot create new archive: " + exc.toString());
+        boolean success = writeFiles(zos);
+        success = closeZipOutputStream(zos) && success;
+        if ( !success) {
             try {
                 Files.delete(target);
-            } catch (IOException e) {
+            } catch (IOException exc) {
                 setErrorString("cannot remove invalid archive " + target + ": " + exc.toString());
             }
-            return false;
         }
-        return true;
+        return success;
     }
 
     @Override

@@ -96,20 +96,17 @@ class ArchiveActionArchiver extends ActionArchiver {
             return false;
         }
 
-        ZipOutputStream zos;
+        ZipOutputStream zos = null;
+        boolean success = true;
         try {
             zos = new ZipOutputStream(Files.newOutputStream(tempFile));
         } catch (IOException exc) {
             setErrorString("cannot create temporary archive: " + exc.toString());
-            removeTemporaryFile(tempFile);
-            return false;
+            success = false;
         }
-        if ( !copyTargetToStream(zos)) {
-            closeZipOutputStream(zos);
-            removeTemporaryFile(tempFile);
-            return false;
-        }
-        if ( !writeFiles(zos)) {
+
+        success = success && copyTargetToStream(zos) && writeFiles(zos);
+        if ( !success) {
             closeZipOutputStream(zos);
             removeTemporaryFile(tempFile);
             return false;
@@ -118,6 +115,7 @@ class ArchiveActionArchiver extends ActionArchiver {
             removeTemporaryFile(tempFile);
             return false;
         }
+
         try {
             Files.move(tempFile, target, StandardCopyOption.REPLACE_EXISTING);
         } catch (IOException exc) {
