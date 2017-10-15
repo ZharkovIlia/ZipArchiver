@@ -45,11 +45,8 @@ class ExtractActionArchiver extends ActionArchiver {
                 targetDirectory = target.getParent();
             }
         }
-        ZipFile zf;
-        try {
-            zf = new ZipFile(getTargetArchiveName());
-        } catch (IOException exc) {
-            setErrorString("cannot read from zip file " + getTargetArchiveName() + ": " + exc.toString());
+        ZipFile zf = openZipFile();
+        if (zf == null) {
             return false;
         }
         try {
@@ -63,14 +60,10 @@ class ExtractActionArchiver extends ActionArchiver {
             }
         } catch (IOException exc) {
             setErrorString("cannot extract zip archive: " + exc.toString());
-            try {
-                zf.close();
-            } catch (IOException e) {
-                setErrorString("cannot close zip archive: " + e.toString());
-            }
+            closeZipFile(zf);
             return false;
         }
-        return true;
+        return closeZipFile(zf);
     }
 
     @Override

@@ -2,10 +2,15 @@ package com.company;
 
 import org.apache.commons.cli.Options;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
+import java.util.zip.ZipFile;
+import java.util.zip.ZipOutputStream;
 
 abstract class ActionArchiver {
     enum ActionType {
@@ -111,6 +116,51 @@ abstract class ActionArchiver {
 
     final String getErrorString() {
         return errorString;
+    }
+
+    ZipFile openZipFile() {
+        ZipFile zf;
+        try {
+            zf = new ZipFile(getTargetArchiveName());
+        } catch (IOException exc) {
+            setErrorString("cannot read from zip file " + getTargetArchiveName() + ": " + exc.toString());
+            return null;
+        }
+        return zf;
+    }
+
+    boolean writeFiles(ZipOutputStream zos) {
+        ArchiveCreator creator = new ArchiveCreator();
+        creator.setZipOutputStream(zos);
+        for (String file : getFiles()) {
+            try {
+                Files.walkFileTree(Paths.get(file).normalize(), creator);
+            } catch (IOException exc) {
+                setErrorString("error occurred during archiving " + file + ": " + exc.toString());
+                return false;
+            }
+        }
+        return true;
+    }
+
+    boolean closeZipOutputStream(ZipOutputStream zos) {
+        try {
+            zos.close();
+        } catch (IOException exc) {
+            setErrorString("cannot close zip archive: " + exc.toString());
+            return false;
+        }
+        return true;
+    }
+
+    boolean closeZipFile(ZipFile zf) {
+        try {
+            zf.close();
+        } catch (IOException exc) {
+            setErrorString("cannot close zip archive: " + exc.toString());
+            return false;
+        }
+        return true;
     }
 
     protected Options options;
