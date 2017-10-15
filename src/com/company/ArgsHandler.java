@@ -45,12 +45,10 @@ class ArgsHandler {
                 }
 
                 List<String> remainder = cmd.getArgList();
-                if (remainder.isEmpty()) {
-                    System.err.println(programName + ": error: target is missed");
-                    System.exit(1);
+                if ( !remainder.isEmpty()) {
+                    this.action.setTargetArchiveName(remainder.get(0));
                 }
 
-                this.action.setTargetArchiveName(remainder.get(0));
                 for (Option opt : this.action.getOptions().getOptions()) {
                     if (opt.getOpt() != null && cmd.hasOption(opt.getOpt())) {
                         this.action.setOptionToValue(opt.getOpt(), cmd.getOptionValue(opt.getOpt()));
@@ -59,17 +57,17 @@ class ArgsHandler {
                     }
                 }
 
-                if (actionType == ActionArchiver.ActionType.CREATE && remainder.size() == 1) {
-                    System.err.println(programName + ": error: there should be at least one file");
+                if (remainder.size() > 1) {
+                    this.action.setFiles(remainder.subList(1, remainder.size()));
+                }
+
+                ActionArchiver.ErrorType err = this.action.verify();
+                if (err == ActionArchiver.ErrorType.ERROR) {
+                    System.err.println(programName + ": error: " + this.action.getErrorString());
                     System.exit(1);
+                } else if (err == ActionArchiver.ErrorType.WARNING) {
+                    System.err.println(programName + ": warning: " + this.action.getErrorString());
                 }
-                if (actionType != ActionArchiver.ActionType.CREATE && remainder.size() > 1) {
-                    System.err.print(programName + ": warning: next arguments were dropped:");
-                    remainder.subList(1, remainder.size()).forEach(file -> System.err.print(" " + file));
-                    System.err.println("");
-                    System.err.flush();
-                }
-                this.action.setFiles(remainder.subList(1, remainder.size()));
             }
         } catch (ParseException exc) {
             System.err.println(programName + ": " + exc.getMessage());

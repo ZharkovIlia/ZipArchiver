@@ -72,4 +72,20 @@ class ExtractActionArchiver extends ActionArchiver {
         }
         return true;
     }
+
+    @Override
+    ErrorType verify() {
+        if (getTargetArchiveName() == null) {
+            setErrorString("target is missed");
+            return ErrorType.ERROR;
+        }
+        if ( !getFiles().isEmpty()) {
+            setErrorString("next arguments were dropped: " + getFiles()
+                    .stream()
+                    .reduce((prev, next) -> prev + ", " + next)
+                    .get());
+            return ErrorType.WARNING;
+        }
+        return ErrorType.VALID;
+    }
 }

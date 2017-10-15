@@ -2,6 +2,7 @@ package com.company;
 
 import org.apache.commons.cli.Options;
 
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
@@ -40,6 +41,12 @@ abstract class ActionArchiver {
 
     }
 
+    enum ErrorType {
+        WARNING,
+        ERROR,
+        VALID
+    }
+
     static ActionArchiver getActionFromType(ActionType type) {
         switch (type) {
             case EXTRACT:
@@ -55,13 +62,14 @@ abstract class ActionArchiver {
 
     abstract String getCLSyntax();
     abstract boolean exec();
+    abstract ErrorType verify();
 
     ActionArchiver(ActionType type) {
         this.type = type;
         optionValues = new TreeMap<>();
         options = null;
         target = null;
-        files = null;
+        files = new LinkedList<>();
         errorString = "unexpected error";
     }
 

@@ -65,4 +65,17 @@ class CreateActionArchiver extends ActionArchiver {
         }
         return true;
     }
+
+    @Override
+    ErrorType verify() {
+        if (getTargetArchiveName() == null) {
+            setErrorString("target is missed");
+            return ErrorType.ERROR;
+        }
+        if (getFiles().isEmpty()) {
+            setErrorString("there should be at least one file");
+            return ErrorType.ERROR;
+        }
+        return ErrorType.VALID;
+    }
 }

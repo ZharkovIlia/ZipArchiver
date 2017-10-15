@@ -31,6 +31,11 @@ class ArchiveActionArchiver extends ActionArchiver {
                 .desc("set new comment on the existing archive")
                 .build());
 
+        optionArchiveGroup.addOption(Option.builder()
+                .longOpt("append")
+                .desc("append additional files")
+                .build());
+
         optionArchiveGroup.addOption(new Option("help", false, "print this message"));
 
         optionArchiveGroup.setRequired(true);
@@ -39,12 +44,33 @@ class ArchiveActionArchiver extends ActionArchiver {
 
     @Override
     String getCLSyntax() {
-        return getActionType().getNameOfOption() + " (-help|--set-comment|--get-comment) target";
+        return getActionType().getNameOfOption() +
+                " (-help|--set-comment|--get-comment|--append) target [files...]";
     }
 
     @Override
     boolean exec() {
         return false;
+    }
+
+    @Override
+    ErrorType verify() {
+        if (getTargetArchiveName() == null) {
+            setErrorString("target is missed");
+            return ErrorType.ERROR;
+        }
+        if ( getOptionValueMapping().containsKey("append") && getFiles().isEmpty()) {
+            setErrorString("there should be at least one file");
+            return ErrorType.ERROR;
+        }
+        if ( !getOptionValueMapping().containsKey("append") && !getFiles().isEmpty()) {
+            setErrorString("next arguments were dropped: " + getFiles()
+                    .stream()
+                    .reduce((prev, next) -> prev + ", " + next)
+                    .get());
+            return ErrorType.WARNING;
+        }
+        return ErrorType.VALID;
     }
 
     private boolean copyTargetToStream(ZipOutputStream zos) {
