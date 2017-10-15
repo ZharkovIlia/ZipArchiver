@@ -12,7 +12,6 @@ class ArgsHandler {
         CommandLineParser parser = new DefaultParser();
         CommandLine cmd;
 
-        String programName = "Archiver";
         String CLSyntaxSubcommands = programName + " ("
                 + Arrays.stream(ActionArchiver.ActionType.values())
                 .map(ActionArchiver.ActionType::getNameOfOption)
@@ -82,6 +81,10 @@ class ArgsHandler {
         return action;
     }
 
+    String getProgramName() {
+        return programName;
+    }
+
     private void initializeSubcommands() {
         subcommands = new Options();
         OptionGroup subcommandsGroup = new OptionGroup();
@@ -95,6 +98,7 @@ class ArgsHandler {
         subcommands.addOptionGroup(subcommandsGroup);
     }
 
+    private final String programName = "ZipArchiver";
     private Options subcommands;
     private ActionArchiver action;
 }

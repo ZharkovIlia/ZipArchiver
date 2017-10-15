@@ -3,6 +3,15 @@ package com.company;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 
+import java.io.BufferedInputStream;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.Enumeration;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
+
 class ExtractActionArchiver extends ActionArchiver {
     ExtractActionArchiver() {
         super(ActionType.EXTRACT);
@@ -17,5 +26,50 @@ class ExtractActionArchiver extends ActionArchiver {
     @Override
     String getCLSyntax() {
         return getActionType().getNameOfOption() + " [options] target";
+    }
+
+    @Override
+    boolean exec() {
+        Path target = Paths.get(getTargetArchiveName());
+        if ( !Files.exists(target)) {
+            setErrorString(getTargetArchiveName() + " does not exist");
+            return false;
+        }
+        Path targetDirectory;
+        if (getOptionValueMapping().containsKey("d")) {
+            targetDirectory = Paths.get(getOptionValueMapping().get("d"));
+        } else {
+            if (target.getNameCount() == 1) {
+                targetDirectory = Paths.get("");
+            } else {
+                targetDirectory = target.getParent();
+            }
+        }
+        ZipFile zf;
+        try {
+            zf = new ZipFile(getTargetArchiveName());
+        } catch (IOException exc) {
+            setErrorString("cannot read from zip file " + getTargetArchiveName() + ": " + exc.toString());
+            return false;
+        }
+        try {
+            for (Enumeration<? extends ZipEntry> entries = zf.entries(); entries.hasMoreElements();) {
+                ZipEntry entry = entries.nextElement();
+                Path path = targetDirectory.resolve(Paths.get(entry.getName()));
+                if (path.getNameCount() > 1) {
+                    Files.createDirectories(path.getParent());
+                }
+                Files.copy(new BufferedInputStream(zf.getInputStream(entry)), path);
+            }
+        } catch (IOException exc) {
+            setErrorString("cannot extract zip archive: " + exc.toString());
+            try {
+                zf.close();
+            } catch (IOException e) {
+                setErrorString("cannot close zip archive: " + e.toString());
+            }
+            return false;
+        }
+        return true;
     }
 }

@@ -4,6 +4,8 @@ import org.apache.commons.cli.Option;
 import org.apache.commons.cli.OptionGroup;
 import org.apache.commons.cli.Options;
 
+import java.io.IOException;
+
 class ArchiveActionArchiver extends ActionArchiver {
     ArchiveActionArchiver() {
         super(ActionType.ARCHIVE);
@@ -31,5 +33,10 @@ class ArchiveActionArchiver extends ActionArchiver {
     @Override
     String getCLSyntax() {
         return getActionType().getNameOfOption() + " (-help|--set-comment|--get-comment) target";
+    }
+
+    @Override
+    boolean exec() {
+        return false;
     }
 }

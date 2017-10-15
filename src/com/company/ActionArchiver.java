@@ -2,6 +2,7 @@ package com.company;
 
 import org.apache.commons.cli.Options;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
@@ -54,6 +55,7 @@ abstract class ActionArchiver {
     }
 
     abstract String getCLSyntax();
+    abstract boolean exec();
 
     ActionArchiver(ActionType type) {
         this.type = type;
@@ -61,6 +63,7 @@ abstract class ActionArchiver {
         options = null;
         target = null;
         files = null;
+        errorString = "unexpected error";
     }
 
     final Options getOptions() {
@@ -95,10 +98,19 @@ abstract class ActionArchiver {
         return type;
     }
 
+    final void setErrorString(String error) {
+        errorString = error;
+    }
+
+    final String getErrorString() {
+        return errorString;
+    }
+
     protected Options options;
 
     private String target;
     private List<String> files;
     private Map<String, String> optionValues;
     private final ActionType type;
+    private String errorString;
 }
