@@ -1,7 +1,5 @@
 package com.company;
 
-
-import java.io.BufferedOutputStream;
 import java.io.IOException;
 
 import java.nio.file.*;
@@ -10,7 +8,7 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
 class ArchiveCreator extends SimpleFileVisitor<Path> {
-    ArchiveCreator() { ;
+    ArchiveCreator() {
         this.pathFromBegin = Paths.get("");
         this.zipOutputStream = null;
     }
@@ -46,15 +44,6 @@ class ArchiveCreator extends SimpleFileVisitor<Path> {
 
     void setZipOutputStream(ZipOutputStream zos) {
         zipOutputStream = zos;
-    }
-
-    void createZipOutputStream(Path path, String comment) throws IOException {
-        zipOutputStream = new ZipOutputStream(new BufferedOutputStream(Files.newOutputStream(path)));
-        zipOutputStream.setComment(comment);
-    }
-
-    void closeZipOutputStream() throws IOException {
-        zipOutputStream.close();
     }
 
     private ZipOutputStream zipOutputStream;

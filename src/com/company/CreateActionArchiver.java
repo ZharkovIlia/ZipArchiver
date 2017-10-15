@@ -37,7 +37,7 @@ class CreateActionArchiver extends ActionArchiver {
             zos = new ZipOutputStream(new BufferedOutputStream(Files.newOutputStream(target.normalize())));
             zos.setComment(getOptionValueMapping().getOrDefault("comment", null));
         } catch (IOException exc) {
-            setErrorString("cannot create temporary archive: " + exc.toString());
+            setErrorString("cannot create new archive: " + exc.toString());
             return false;
         }
         creator.setZipOutputStream(zos);

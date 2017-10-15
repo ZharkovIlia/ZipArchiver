@@ -4,6 +4,7 @@ import org.apache.commons.cli.Options;
 
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.LinkedList;
 import java.util.List;
@@ -127,6 +128,17 @@ abstract class ActionArchiver {
             return null;
         }
         return zf;
+    }
+
+    ZipOutputStream openZipOutputStream(Path file) {
+        ZipOutputStream zos;
+        try {
+            zos = new ZipOutputStream(Files.newOutputStream(file));
+        } catch (IOException exc) {
+            setErrorString("cannot create archive: " + exc.toString());
+            return null;
+        }
+        return zos;
     }
 
     boolean writeFiles(ZipOutputStream zos) {

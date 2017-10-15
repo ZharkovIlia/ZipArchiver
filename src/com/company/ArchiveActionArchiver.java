@@ -12,6 +12,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.Enumeration;
+import java.util.LinkedList;
 import java.util.Optional;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
@@ -80,6 +81,7 @@ class ArchiveActionArchiver extends ActionArchiver {
                     .stream()
                     .reduce((prev, next) -> prev + ", " + next)
                     .get());
+            setFiles(new LinkedList<>());
             return ErrorType.WARNING;
         }
         return ErrorType.VALID;
@@ -88,20 +90,14 @@ class ArchiveActionArchiver extends ActionArchiver {
     private boolean execAppend() {
         Path target = Paths.get(getTargetArchiveName());
         Path curdir = (target.getNameCount() > 1 ? target.getParent() : Paths.get("."));
-        Path tempFile;
-        try {
-            tempFile = Files.createTempFile(curdir, "." + target.getName(target.getNameCount() - 1), "~");
-        } catch (IOException exc) {
-            setErrorString("cannot create temporary file: " + exc.toString());
+        Path tempFile = createTemporaryFile(curdir, target.getName(target.getNameCount() - 1).toString());
+        if (tempFile == null) {
             return false;
         }
 
-        ZipOutputStream zos = null;
+        ZipOutputStream zos = openZipOutputStream(tempFile);
         boolean success = true;
-        try {
-            zos = new ZipOutputStream(Files.newOutputStream(tempFile));
-        } catch (IOException exc) {
-            setErrorString("cannot create temporary archive: " + exc.toString());
+        if (zos == null) {
             success = false;
         }
 
@@ -111,15 +107,8 @@ class ArchiveActionArchiver extends ActionArchiver {
             removeTemporaryFile(tempFile);
             return false;
         }
-        if ( !closeZipOutputStream(zos)) {
-            removeTemporaryFile(tempFile);
-            return false;
-        }
-
-        try {
-            Files.move(tempFile, target, StandardCopyOption.REPLACE_EXISTING);
-        } catch (IOException exc) {
-            setErrorString("cannot update existing archive: " + exc.toString());
+        success = closeZipOutputStream(zos) && moveTemporaryFileToTarget(tempFile, target);
+        if ( !success) {
             removeTemporaryFile(tempFile);
             return false;
         }
@@ -136,7 +125,42 @@ class ArchiveActionArchiver extends ActionArchiver {
     }
 
     private boolean execSetComment() {
-        return false;
+        Path target = Paths.get(getTargetArchiveName());
+        Path curdir = (target.getNameCount() > 1 ? target.getParent() : Paths.get("."));
+        Path tempFile = createTemporaryFile(curdir, target.getName(target.getNameCount() - 1).toString());
+        if (tempFile == null) {
+            return false;
+        }
+
+        ZipOutputStream zos = openZipOutputStream(tempFile);
+        if (zos == null) {
+            removeTemporaryFile(tempFile);
+            return false;
+        }
+
+        if ( !copyTargetToStream(zos)) {
+            closeZipOutputStream(zos);
+            removeTemporaryFile(tempFile);
+            return false;
+        }
+        zos.setComment(getOptionValueMapping().get("set-comment"));
+        boolean success = closeZipOutputStream(zos) && moveTemporaryFileToTarget(tempFile, target);
+        if ( !success) {
+            removeTemporaryFile(tempFile);
+            return false;
+        }
+        return true;
+    }
+
+    private Path createTemporaryFile(Path dir, String name) {
+        Path tempFile;
+        try {
+            tempFile = Files.createTempFile(dir, "." + name, "~");
+        } catch (IOException exc) {
+            setErrorString("cannot create temporary file: " + exc.toString());
+            return null;
+        }
+        return tempFile;
     }
 
     private boolean removeTemporaryFile(Path tempFile) {
@@ -144,6 +168,16 @@ class ArchiveActionArchiver extends ActionArchiver {
             Files.delete(tempFile);
         } catch (IOException exc) {
             setErrorString("cannot remove temporary file: " + exc.toString());
+            return false;
+        }
+        return true;
+    }
+
+    private boolean moveTemporaryFileToTarget(Path tempFile, Path target) {
+        try {
+            Files.move(tempFile, target, StandardCopyOption.REPLACE_EXISTING);
+        } catch (IOException exc) {
+            setErrorString("cannot update existing archive: " + exc.toString());
             return false;
         }
         return true;

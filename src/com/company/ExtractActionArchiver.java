@@ -9,6 +9,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Enumeration;
+import java.util.LinkedList;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
@@ -77,6 +78,7 @@ class ExtractActionArchiver extends ActionArchiver {
                     .stream()
                     .reduce((prev, next) -> prev + ", " + next)
                     .get());
+            setFiles(new LinkedList<>());
             return ErrorType.WARNING;
         }
         return ErrorType.VALID;
